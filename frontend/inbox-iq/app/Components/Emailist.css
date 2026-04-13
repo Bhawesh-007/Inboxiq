@@ -1,0 +1,97 @@
+
+/* Page wrapper */
+.supclass {
+  flex: 0 0 450px;
+  min-width: 200px;  
+  padding: 20px;
+  background: #111; /* deep dark background */
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header section */
+.header {
+  margin-bottom: 16px;
+}
+
+.head {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+/* Email list container */
+.emaillist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  scrollbar-width: none;;
+  flex: 1;
+}
+
+/* Email card */
+.email-box {
+  background: #111;
+  border: 1px solid #1f2a44;
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+/* Hover effect */
+.email-box:hover {
+  background: #16213a;
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+}
+
+/* Top row */
+.email-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+/* Sender */
+.sender {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+
+  max-width: 70%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Time */
+.time {
+  font-size: 12px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+/* Subject */
+.email-subject {
+  font-size: 15px;
+  font-weight: 500;
+  color: #f8fafc;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Loading text */
+.loading {
+  color: #cbd5e1;
+  font-size: 16px;
+  padding: 20px;
+}

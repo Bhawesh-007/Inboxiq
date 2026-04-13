@@ -1,0 +1,113 @@
+
+/* Main container */
+.email-detail {
+  flex: 1;
+  min-width: 0;
+  background: #0a0a0a;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+}
+
+/* Body container */
+.email-body {
+  flex: 1;
+  min-width: 0;
+  padding: 20px 28px;
+
+  overflow-y: auto;
+
+  color: #b5b5b5;
+  font-size: 14px;
+  line-height: 1.8;
+
+  white-space: pre-wrap;
+}
+
+/* Loading / empty states */
+.email-empty,
+.email-loading {
+  flex: 1;
+  background: #0a0a0a;
+  color: #ccc;
+  padding: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* Header section */
+.email-header {
+  padding: 22px 28px 18px;
+  border-bottom: 1px solid #1a1a1a;
+  background: #0f0f0f;
+}
+
+/* Subject */
+.email-subject {
+  color: #f0ede4;
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 10px;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Meta info */
+.email-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.email-from {
+  color: #666;
+  font-size: 12px;
+}
+
+.email-from span {
+  color: #aaa;
+}
+
+.email-date {
+  color: #444;
+  font-size: 11px;
+}
+
+/* Scrollbar styling (clean Gmail-like) */
+.email-body {
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+
+.email-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.email-body::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+}
+
+.email-body::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+/* Loading / empty states */
+.email-empty,
+.email-loading {
+  flex: 1;
+  background: #0a0a0a;
+  color: #444;
+  padding: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 14px;
+}
