@@ -10,7 +10,7 @@
     const [loading , setLoading] = useState(true);
     const [error, setError] = useState(null);
     useEffect(()=>{
-        fetch(`http://localhost:5002/emails/${emailId}`)
+        fetch(`http://localhost:5003/emails/${emailId}`)
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch email details');
                 return res.json();

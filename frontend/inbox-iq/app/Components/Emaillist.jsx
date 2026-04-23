@@ -2,6 +2,7 @@
 import React from 'react'
 import './Emailist.css'
 import { useEffect ,useState } from 'react';
+import Tagbadge from './Tagbadge'
 
 
 //see now i have configured the gmail inbox of mine now here i will connect 
@@ -14,7 +15,7 @@ function Emaillist({onEmailClick}){
   const [selectedId , setSelectedId] = useState(null);
   const [error, setError] = useState(null);
   useEffect(() => {
-    fetch('http://localhost:5002/emails')
+    fetch('http://localhost:5003/emails')
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch emails');
         return res.json();
@@ -58,6 +59,7 @@ function Emaillist({onEmailClick}){
             <div className='email-header flex items-center gap-2'>
               <span className='sender'>{email.from}</span>
               <span className='time'>{email.date}</span>
+              <Tagbadge tag={email.label} />
             </div>
             <div className='email-subject'>{email.subject}</div>
           </div>
