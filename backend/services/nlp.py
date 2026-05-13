@@ -7,7 +7,7 @@ nlp = spacy.load("en_core_web_sm")
 LABEL_KEYWORDS = {
     "spam": [
         "offer", "win", "free", "discount", "deal", "prize", "click here",
-        "unsubscribe", "promotion", "sale", "% off", "limited time", "congratulations"
+        "unsubscribe", "promotion", "sale", "%off", "limited time", "congratulations"
     ],
     "urgent": [
         "urgent", "immediate", "asap", "critical", "emergency", "important",

@@ -9,6 +9,9 @@
     const [email,setEmail] = useState(null);
     const [loading , setLoading] = useState(true);
     const [error, setError] = useState(null);
+    
+    //see what  i want now is to load data of email in a varriable so 
+    //that i can use it for updating the database wwhenever i clik on a email
     useEffect(()=>{
         fetch(`http://localhost:5003/emails/${emailId}`)
             .then((res) => {

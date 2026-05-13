@@ -1,0 +1,38 @@
+[
+  {
+    "subject": "URGENT: Payment failed \u2014 update billing now",
+    "body": "Your subscription payment has failed. Please update your billing details within 24 hours or your account will be suspended.",
+    "tag": "urgent",
+    "reason": "Time-sensitive account action required within 24 hours"
+  },
+  {
+    "subject": "Can you send me the report by EOD?",
+    "body": "Hi, could you please share the Q3 report before end of day today? Need it for the client call.",
+    "tag": "action",
+    "reason": "Requires sending a document, has a soft deadline"
+  },
+  {
+    "subject": "Office will be closed on Friday",
+    "body": "Just a reminder that the office will remain closed this Friday for the public holiday.",
+    "tag": "fyi",
+    "reason": "Informational announcement, no action needed"
+  },
+  {
+    "subject": "You have been pre-approved for a loan!",
+    "body": "Dear customer, you have been pre-approved for a personal loan of up to Rs. 5,00,000. Apply now!",
+    "tag": "spam",
+    "reason": "Unsolicited financial promotional offer"
+  },
+  {
+    "subject": "Production DB CPU at 98% \u2014 check immediately",
+    "body": "Alert: Database CPU usage has been above 95% for 5 minutes. Query performance degraded.",
+    "tag": "urgent",
+    "reason": "System alert requiring immediate investigation"
+  },
+  {
+    "subject": "Summary of last week's sprint",
+    "body": "Here's a quick summary of what we shipped last week. No action needed \u2014 just sharing for visibility.",
+    "tag": "fyi",
+    "reason": "Sprint summary shared for information only"
+  }
+]
