@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from services import fetch_emails, fetch_email_detail
+from services.gmail import fetch_emails, fetch_email_detail, sync_emails_to_supabase
 from services.nlp import classify_email
 from services.parser import extract_body, extract_plain_text
 import base64
@@ -24,15 +24,32 @@ def get_emails():
         return {"error": "environment variables are missing"}
 
     try:
-        emails = fetch_emails()
-        for email in emails:
+        # 1. This hits Gmail API, cleans data, and saves to Supabase
+        # We must assign the result to a variable!
+        synced_emails = sync_emails_to_supabase()
+        
+        # 2. Format the data for the frontend and apply NLP classification
+        frontend_emails = []
+        for email in synced_emails:
+            # Add NLP classification
             label = classify_email(
                 subject=email["subject"],
-                sender=email["from"]
+                sender=email["sender"]
             )
-            email["label"] = label
-        return {"emails": emails}
+            
+            frontend_emails.append({
+                "id": email["gmail_id"],      # frontend expects 'id'
+                "subject": email["subject"],
+                "from": email["sender"],      # frontend expects 'from'
+                "date": email["date"],
+                "label": label,
+                "body": email["body"]
+            })
+            
+        return {"emails": frontend_emails}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {"error": str(e)}
 
 
