@@ -27,17 +27,22 @@ def get_gmail_service():
     return build("gmail", "v1", credentials=creds)
 
 
-def fetch_emails():
+def fetch_emails(page_token: str=None):
     try:
         service = get_gmail_service()
-    
+        req_kwargs = {
+        "userId":"me",
+        "maxResults" : "10"
+        }
+        if page_token:
+            req_kwargs["pageToken"] = page_token
         results = service.users().messages().list(
-            userId="me",
-            maxResults=10
+            **req_kwargs
         ).execute()
     
+        next_page_token = results.get("nextPageToken", None)
         messages = results.get("messages", [])
-        emails = []
+        
     
         for msg in messages:
             detail = service.users().messages().get(
@@ -56,10 +61,10 @@ def fetch_emails():
                 "date": next((h["value"] for h in headers if h["name"] == "Date"), ""),
             })
     
-        return emails
+        return emails,next_page_token
     except Exception as e:
         print(f"Error fetching emails: {e}")
-        return []
+        return [],None
 
 
 def fetch_email_detail(email_id: str):
@@ -87,46 +92,31 @@ def fetch_email_detail(email_id: str):
         "date": next((h["value"] for h in headers if h["name"] == "Date"), ""),
         "body": body
     }
-def sync_emails_to_supabase():
-    """Fetch recent emails and upsert them into the Supabase `emails` table.
-    Automatically fetches the user's Google profile to link them in the DB.
+def ensure_user_exists(user_id: str) -> None:
     """
-    service = get_gmail_service()
-    
-    # 1. Get the user's real email address from the Gmail API
-    profile = service.users().getProfile(userId="me").execute()
-    email_address = profile.get("emailAddress")
-    
-    if not email_address:
-        print("Could not retrieve email address from Gmail API.")
-        return []
+    Upsert a minimal user row so that foreign‑key constraints are satisfied.
+    Adjust the payload if your `users` table requires extra columns.
+    """
+    # Minimal user payload; add more fields if required by your schema
+    payload = {"id": user_id}
+    supabase.table("users").upsert(payload, on_conflict="id").execute()
 
-    # 2. Find or create the user in the Supabase 'users' table
-    user_res = supabase.table("users").select("id").eq("email", email_address).execute()
-    
-    if user_res.data:
-        # User already exists, grab their real UUID
-        user_id = user_res.data[0]["id"]
-    else:
-        # New user, insert them and let Postgres generate the UUID
-        user_data = {
-            "name": email_address.split("@")[0],  # Fallback name
-            "email": email_address
-        }
-        insert_res = supabase.table("users").insert(user_data).execute()
-        user_id = insert_res.data[0]["id"]
+# Service to store fetched emails in Supabase
 
-    print(f"Syncing emails for user: {email_address} (UUID: {user_id})")
+def sync_emails_to_supabase(page_token: str=None):
+    """Fetch recent emails and upsert them into the Supabase `emails` table.
 
-    # 3. Fetch emails and clean bodies
+    Ensures the related user exists before upserting email rows.
+    """
+    # Ensure the user row exists first
+    ensure_user_exists(user_id)
     emails_to_store = []
-    raw_emails = fetch_emails()
+    raw_emails ,next_page_token= fetch_emails(page_token)
     for email in raw_emails:
         detail = fetch_email_detail(email["id"])  # Get full detail
         raw_body = detail.get("body") or ""
         cleaned_parts = extract_headings_and_paragraphs(raw_body)
         cleaned_body = "\n".join(cleaned_parts)
-        
         emails_to_store.append({
             "user_id": user_id,
             "gmail_id": detail["id"],
@@ -135,15 +125,13 @@ def sync_emails_to_supabase():
             "date": detail.get("date", ""),
             "body": cleaned_body,
         })
-        
-    # 4. Upsert into the emails table
-    if emails_to_store:
-        supabase.table("emails").upsert(emails_to_store, on_conflict="gmail_id").execute()
-        print(f"Successfully synced {len(emails_to_store)} emails to Supabase.")
+    if(emails_to_store):
+        supabase.table("emails").upsert(emails_to_store).execute()
     else:
         print("No emails to store")
+    return emails_to_store , next_page_token,user_id;
         
-    return emails_to_store
+   
 def export_emails_to_file(user_id: str, file_path: str = "data.txt") -> None:
     """Fetch emails for the given user and write them to a local JSON file.
 
