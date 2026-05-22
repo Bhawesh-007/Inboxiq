@@ -2,6 +2,9 @@ from fastapi import APIRouter
 from services.gmail import fetch_emails, fetch_email_detail, sync_emails_to_supabase
 from services.nlp import classify_email
 from services.parser import extract_body, extract_plain_text
+from pagination.paginator import EmailPaginator
+from services.gmail import get_gmail_service
+from database import supabase
 import base64
 from config import (
     GMAIL_ACCESS_TOKEN,
@@ -14,7 +17,7 @@ router = APIRouter()
 
 
 @router.get("/emails")
-def get_emails():
+def get_emails(page : int =1 , per_page: int = 10):
     if not all([
         GMAIL_ACCESS_TOKEN,
         GMAIL_REFRESH_TOKEN,
@@ -26,11 +29,26 @@ def get_emails():
     try:
         # 1. This hits Gmail API, cleans data, and saves to Supabase
         # We must assign the result to a variable!
-        synced_emails = sync_emails_to_supabase()
+        service = get_gmail_service()#this is for talking to gmail api
+        profile = service.users().getProfile(userId="me" , fields = "emailAddress").execute()
+        email_address = profile.get("emailAddress")
+        user_res = supabase.table("users").select("*").eq("email",email_address).execute()
+        if not user_res.data:
+            return {"error": "user not found"}
+        user_id = user_res.data[0]["id"] #this is for grabbing the uuid from the user table
+        gmail_token = None
+        if page>1:
+            gmail_token = EmailPaginator.get_token_for_page(user_id, page)
+            if not gmail_token:
+                page = 1
+        synced_emails , next_page_token,_ = sync_emails_to_supabase(page_token = gmail_token)
+        if next_page_token:
+            EmailPaginator.save_next_page_token(user_id, page, next_page_token)
+        db_emails = EmailPaginator.get_emails_from_db(user_id, page, per_page)
         
         # 2. Format the data for the frontend and apply NLP classification
         frontend_emails = []
-        for email in synced_emails:
+        for email in db_emails:
             # Add NLP classification
             label = classify_email(
                 subject=email["subject"],
@@ -46,7 +64,13 @@ def get_emails():
                 "body": email["body"]
             })
             
-        return {"emails": frontend_emails}
+        return {"emails": frontend_emails,
+         "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "has_more": next_page_token is not None or len(frontend_emails) == per_page
+            }
+        }
     except Exception as e:
         import traceback
         traceback.print_exc()

@@ -1,3 +1,4 @@
+from os import get_terminal_size
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
@@ -30,19 +31,19 @@ def get_gmail_service():
 def fetch_emails(page_token: str=None):
     try:
         service = get_gmail_service()
+    
         req_kwargs = {
-        "userId":"me",
-        "maxResults" : "10"
+            "userId": "me",
+            "maxResults": 10
         }
         if page_token:
             req_kwargs["pageToken"] = page_token
-        results = service.users().messages().list(
-            **req_kwargs
-        ).execute()
-    
-        next_page_token = results.get("nextPageToken", None)
-        messages = results.get("messages", [])
+            
+        results = service.users().messages().list(**req_kwargs).execute()
         
+        next_page_token = results.get("nextPageToken")
+        messages = results.get("messages", [])
+        emails = []
     
         for msg in messages:
             detail = service.users().messages().get(
@@ -61,10 +62,10 @@ def fetch_emails(page_token: str=None):
                 "date": next((h["value"] for h in headers if h["name"] == "Date"), ""),
             })
     
-        return emails,next_page_token
+        return emails, next_page_token
     except Exception as e:
         print(f"Error fetching emails: {e}")
-        return [],None
+        return [], None
 
 
 def fetch_email_detail(email_id: str):
@@ -92,14 +93,7 @@ def fetch_email_detail(email_id: str):
         "date": next((h["value"] for h in headers if h["name"] == "Date"), ""),
         "body": body
     }
-def ensure_user_exists(user_id: str) -> None:
-    """
-    Upsert a minimal user row so that foreign‑key constraints are satisfied.
-    Adjust the payload if your `users` table requires extra columns.
-    """
-    # Minimal user payload; add more fields if required by your schema
-    payload = {"id": user_id}
-    supabase.table("users").upsert(payload, on_conflict="id").execute()
+
 
 # Service to store fetched emails in Supabase
 
@@ -109,7 +103,15 @@ def sync_emails_to_supabase(page_token: str=None):
     Ensures the related user exists before upserting email rows.
     """
     # Ensure the user row exists first
-    ensure_user_exists(user_id)
+    service = get_gmail_service()
+    profile = service.users().getProfile(userId="me", fields="emailAddress").execute()
+    email_address = profile.get("emailAddress")
+    res = supabase.table("users").select("id").eq("email",email_address).execute()
+    if res.data:
+        user_id = res.data[0]["id"]
+    else:
+        print("No user found")
+        return None,None,None
     emails_to_store = []
     raw_emails ,next_page_token= fetch_emails(page_token)
     for email in raw_emails:
