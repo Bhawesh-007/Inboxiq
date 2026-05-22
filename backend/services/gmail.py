@@ -5,6 +5,7 @@ from google.auth.transport.requests import Request
 from services.parser import extract_body,extract_plain_text,extract_headings_and_paragraphs
 import base64
 from database import supabase
+from email.utils import parsedate_to_datetime
 from config import (
     GMAIL_ACCESS_TOKEN,
     GMAIL_REFRESH_TOKEN,
@@ -26,6 +27,18 @@ def get_gmail_service():
         creds.refresh(Request())
 
     return build("gmail", "v1", credentials=creds)
+def get_or_create_user(email_address: str)->str:
+    res = supabase.table("users").select("id").eq("email",email_address).execute()
+    if res.data:
+        return res.data[0]["id"]
+    else:
+        new_user = {
+            "email":email_address,
+            "name":email_address.split("@")[0]
+        }
+        user_res = supabase.table("users").insert(new_user).execute()
+        return user_res.data[0]["id"]
+    return None
 
 
 def fetch_emails(page_token: str=None):
@@ -106,10 +119,8 @@ def sync_emails_to_supabase(page_token: str=None):
     service = get_gmail_service()
     profile = service.users().getProfile(userId="me", fields="emailAddress").execute()
     email_address = profile.get("emailAddress")
-    res = supabase.table("users").select("id").eq("email",email_address).execute()
-    if res.data:
-        user_id = res.data[0]["id"]
-    else:
+    user_id = get_or_create_user(email_address)
+    if not user_id:
         print("No user found")
         return None,None,None
     emails_to_store = []
@@ -119,12 +130,20 @@ def sync_emails_to_supabase(page_token: str=None):
         raw_body = detail.get("body") or ""
         cleaned_parts = extract_headings_and_paragraphs(raw_body)
         cleaned_body = "\n".join(cleaned_parts)
+        raw_date = detail.get("date","")
+        parsed_date = raw_date
+        try:
+            parsed_date = parsedate_to_datetime(raw_date).isoformat()
+        except Exception:
+            pass
+
+
         emails_to_store.append({
             "user_id": user_id,
             "gmail_id": detail["id"],
             "subject": detail["subject"],
             "sender": detail["from"],
-            "date": detail.get("date", ""),
+            "date": parsed_date,
             "body": cleaned_body,
         })
     if(emails_to_store):

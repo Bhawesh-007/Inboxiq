@@ -1,18 +1,20 @@
-    "use client"
-    import React from 'react'
-    import './Emaildetail.css'
-    import { useState , useEffect } from 'react'
-    // now here i will render the details and body of the email that is selected
+"use client"
+import React from 'react'
+import './Emaildetail.css'
+import { useState, useEffect } from 'react'
+// now here i will render the details and body of the email that is selected
 
 
-    function Emaildetail({emailId}) {
-    const [email,setEmail] = useState(null);
-    const [loading , setLoading] = useState(true);
+function Emaildetail({ emailId }) {
+    const [email, setEmail] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
+
     //see what  i want now is to load data of email in a varriable so 
     //that i can use it for updating the database wwhenever i clik on a email
-    useEffect(()=>{
+    useEffect(() => {
+        if (!emailId) return;
+        setLoading(true);
         fetch(`http://localhost:5003/emails/${emailId}`)
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch email details');
@@ -35,15 +37,15 @@
                 setEmail(null);
                 setLoading(false);
             });
-        }, [emailId]);
+    }, [emailId]);
     if (!emailId) return <div className="email-empty">Select an email to read</div>
     if (loading) return <div className="email-loading">Loading...</div>
-    if(!email)return null;
+    if (!email) return null;
     return (
-      <div className="email-detail">
-        <div className="email-body" dangerouslySetInnerHTML={{ __html: email.body }} />
-      </div>
+        <div className="email-detail">
+            <div className="email-body" dangerouslySetInnerHTML={{ __html: email.body }} />
+        </div>
     )
-    }
+}
 
-    export default Emaildetail
+export default Emaildetail

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from services.gmail import fetch_emails, fetch_email_detail, sync_emails_to_supabase
+from services.gmail import fetch_emails, fetch_email_detail, sync_emails_to_supabase,get_gmail_service,get_or_create_user
 from services.nlp import classify_email
 from services.parser import extract_body, extract_plain_text
 from pagination.paginator import EmailPaginator
@@ -32,10 +32,10 @@ def get_emails(page : int =1 , per_page: int = 10):
         service = get_gmail_service()#this is for talking to gmail api
         profile = service.users().getProfile(userId="me" , fields = "emailAddress").execute()
         email_address = profile.get("emailAddress")
-        user_res = supabase.table("users").select("*").eq("email",email_address).execute()
-        if not user_res.data:
+       
+        user_id = get_or_create_user(email_address) #this is for grabbing the uuid from the user table
+        if not user_id:
             return {"error": "user not found"}
-        user_id = user_res.data[0]["id"] #this is for grabbing the uuid from the user table
         gmail_token = None
         if page>1:
             gmail_token = EmailPaginator.get_token_for_page(user_id, page)
