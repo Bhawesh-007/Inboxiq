@@ -41,7 +41,13 @@ def get_emails(page : int =1 , per_page: int = 10):
             gmail_token = EmailPaginator.get_token_for_page(user_id, page)
             if not gmail_token:
                 page = 1
-        synced_emails , next_page_token,_ = sync_emails_to_supabase(page_token = gmail_token)
+        page_token_exists = supabase.table("page_tokens").select("token").eq("user_id",user_id).eq("page",page).execute().data
+        next_page_token = None
+        if page_token_exists:
+            next_page_token = page_token_exists[0]["token"]
+
+        if not page_token_exists:
+            synced_emails , next_page_token,_ = sync_emails_to_supabase(page_token = gmail_token)
         if next_page_token:
             EmailPaginator.save_next_page_token(user_id, page, next_page_token)
         db_emails = EmailPaginator.get_emails_from_db(user_id, page, per_page)

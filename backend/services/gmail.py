@@ -36,7 +36,8 @@ def get_or_create_user(email_address: str)->str:
             "email":email_address,
             "name":email_address.split("@")[0]
         }
-        user_res = supabase.table("users").insert(new_user).execute()
+        user_res = supabase.table("users").upsert(new_user,
+        on_conflict="email").execute()
         return user_res.data[0]["id"]
     return None
 
