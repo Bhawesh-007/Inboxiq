@@ -4,7 +4,7 @@ import Sidebar from './Components/Sidebar'
 import Emaillist from './Components/Emaillist'
 import Emaildetail from './Components/Emaildetail'
 import { useState } from 'react'
-function page() {
+function Page() {
   const [selectedId, setSelectedId] = useState(null);
   return (
     <div className=' flex  h-screen'>
@@ -15,4 +15,4 @@ function page() {
   )
 }
 
-export default page
+export default Page
