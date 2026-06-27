@@ -85,7 +85,8 @@ def classify_batch(emails: list) -> list:
     """
     results = []
     for i, email in enumerate(emails):
-        print(f"  Classifying {i+1}/{len(emails)}: {email.get('subject','')[:50]}...")
+        safe_subject = email.get('subject', '').encode('ascii', errors='ignore').decode('ascii')
+        print(f"  Classifying {i+1}/{len(emails)}: {safe_subject[:50]}...")
         tag_data = classify_email(
             subject=email.get("subject", ""),
             body=email.get("body", "")

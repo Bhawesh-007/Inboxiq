@@ -1,6 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from services.gmail import fetch_emails, fetch_email_detail, sync_emails_to_supabase,get_gmail_service,get_or_create_user
-from services.nlp import classify_email
 from services.parser import extract_body, extract_plain_text
 from pagination.paginator import EmailPaginator
 from services.gmail import get_gmail_service
@@ -15,9 +14,47 @@ from config import (
 
 router = APIRouter()
 
+def background_classify_emails(emails_to_classify: list):
+    if not emails_to_classify:
+        return
+    batch_payload = []
+    for email in emails_to_classify:
+        batch_payload.append({
+            "db_uuid": email["id"],
+            "subject": email["subject"],
+            "body": email["body"] or ""
+        })
+    try:
+        from ml_model.predict import classify_batch
+        from database import supabase
+        
+        print(f"[Background] Starting classification for {len(batch_payload)} emails...")
+        classified_data = classify_batch(batch_payload)
+        priority_map = {"urgent": 1, "action": 2, "fyi": 3, "spam": 4}
+        classifications_to_store = []
+        for item in classified_data:
+            email_uuid = item["db_uuid"]
+            tag = item["tag"]
+            reason = item["reason"]
+            classifications_to_store.append({
+                "email_id": email_uuid,
+                "label": tag,
+                "priority": priority_map.get(tag, 3),
+                "summary": reason
+            })
+            
+        if classifications_to_store:
+            supabase.table("classifications").insert(
+                classifications_to_store
+               
+            ).execute()
+        print(f"[Background] Classification completed and saved to database.")
+    except Exception as e:
+        print(f"[Background] Error in classification: {e}")
+
 
 @router.get("/emails")
-def get_emails(page : int =1 , per_page: int = 10):
+def get_emails(background_tasks: BackgroundTasks, page : int =1 , per_page: int = 10):
     if not all([
         GMAIL_ACCESS_TOKEN,
         GMAIL_REFRESH_TOKEN,
@@ -50,25 +87,38 @@ def get_emails(page : int =1 , per_page: int = 10):
             synced_emails , next_page_token,_ = sync_emails_to_supabase(page_token = gmail_token)
         if next_page_token:
             EmailPaginator.save_next_page_token(user_id, page, next_page_token)
-        db_emails = EmailPaginator.get_emails_from_db(user_id, page, per_page)
+        offset = (page-1)*per_page
+        res = supabase.table("emails") \
+        .select("*, classifications(*)") \
+        .eq("user_id", user_id) \
+        .order("date", desc=True) \
+        .range(offset, offset + per_page - 1) \
+        .execute()
+        db_emails = res.data
+        
+        unclassified_emails = []
+        for email in db_emails:
+            cls_list = email.get("classifications")
+            if not cls_list:
+                unclassified_emails.append(email)
+                
+        if unclassified_emails:
+            background_tasks.add_task(background_classify_emails, unclassified_emails)
         
         # 2. Format the data for the frontend and apply NLP classification
         frontend_emails = []
         for email in db_emails:
             # Add NLP classification
-            label = classify_email(
-                subject=email["subject"],
-                sender=email["sender"]
-            )
-            
-            frontend_emails.append({
-                "id": email["gmail_id"],      # frontend expects 'id'
-                "subject": email["subject"],
-                "from": email["sender"],      # frontend expects 'from'
-                "date": email["date"],
-                "label": label,
-                "body": email["body"]
-            })
+           cls_list = email.get("classifications")
+           classification = cls_list[0] if cls_list else None
+           frontend_emails.append({
+            "id": email["gmail_id"],      # frontend expects 'id'
+            "subject": email["subject"],
+            "from": email["sender"],      # frontend expects 'from'
+            "date": email["date"],
+            "label": classification["label"] if classification else "unknown",
+            "body": email["body"]
+        })
             
         return {"emails": frontend_emails,
          "pagination": {
@@ -85,4 +135,42 @@ def get_emails(page : int =1 , per_page: int = 10):
 
 @router.get("/emails/{email_id}")
 def get_email(email_id: str):
-    return fetch_email_detail(email_id)
+      # Fetch email details along with its classification record
+    res = supabase.table("emails") \
+        .select("*, classifications(*)") \
+        .eq("gmail_id", email_id) \
+        .execute()
+        
+    if not res.data:
+        return {"error": "Email not found"}
+        
+    email_data = res.data[0]
+    cls_list = email_data.get("classifications")
+    classification = cls_list[0] if cls_list else None
+    
+    if not classification:
+        try:
+            from ml_model.predict import classify_email
+            result = classify_email(email_data["subject"], email_data["body"] or "")
+            priority_map = {"urgent": 1, "action": 2, "fyi": 3, "spam": 4}
+            tag = result.get("tag", "fyi")
+            reason = result.get("reason", "")
+            
+            classification = {
+                "email_id": email_data["id"],
+                "label": tag,
+                "priority": priority_map.get(tag, 3),
+                "summary": reason
+            }
+            supabase.table("classifications").insert(classification).execute()
+        except Exception as e:
+            print(f"Error classifying single email on the fly: {e}")
+    
+    return {
+        "id": email_data["gmail_id"],
+        "subject": email_data["subject"],
+        "from": email_data["sender"],
+        "date": email_data["date"],
+        "body": email_data["body"],
+        "classification": classification # Passed directly to Next.js Emaildetail
+    }

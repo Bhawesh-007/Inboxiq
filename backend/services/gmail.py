@@ -6,6 +6,7 @@ from services.parser import extract_body,extract_plain_text,extract_headings_and
 import base64
 from database import supabase
 from email.utils import parsedate_to_datetime
+from ml_model.predict import classify_batch
 from config import (
     GMAIL_ACCESS_TOKEN,
     GMAIL_REFRESH_TOKEN,
@@ -148,10 +149,10 @@ def sync_emails_to_supabase(page_token: str=None):
             "body": cleaned_body,
         })
     if(emails_to_store):
-        supabase.table("emails").upsert(emails_to_store).execute()
+       supabase.table("emails").upsert(emails_to_store).execute()
     else:
         print("No emails to store")
-    return emails_to_store , next_page_token,user_id;
+    return emails_to_store , next_page_token, user_id;
         
    
 def export_emails_to_file(user_id: str, file_path: str = "data.txt") -> None:

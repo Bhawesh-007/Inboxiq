@@ -2,7 +2,8 @@
 import React from 'react'
 import './Emailist.css'
 import { useEffect, useState } from 'react';
-import Tagbadge from './Tagbadge'
+import Tagbadge from './Tagbadge';
+
 
 
 //see now i have configured the gmail inbox of mine now here i will connect 
