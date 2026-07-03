@@ -9,7 +9,7 @@ import React from 'react'
   }
   //now what we will do is that pass a prop to this from email list and here i will just customize that element based on the tag type and the text will be the tag name itself. so this will be a reusable component which will take the tag name as prop and then render that tag with appropriate styles.
 function Tagbadge({tag}) {
-    const style = tagStyles[tag]||tagStyles[fyi]
+    const style = tagStyles[tag] || tagStyles.fyi
   return (
     <span className = "tag" style = {{...style,
       fontSize: "12px",

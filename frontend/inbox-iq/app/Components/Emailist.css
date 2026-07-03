@@ -1,10 +1,10 @@
-
 /* Page wrapper */
 .supclass {
   flex: 0 0 450px;
-  min-width: 200px;  
+  min-width: 200px;
   padding: 20px;
-  background: #111; /* deep dark background */
+  background: #111;
+  /* deep dark background */
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
   height: 100%;
   display: flex;
@@ -29,7 +29,8 @@
   flex-direction: column;
   gap: 10px;
   overflow-y: auto;
-  scrollbar-width: none;;
+  scrollbar-width: none;
+  ;
   flex: 1;
 }
 
@@ -94,4 +95,88 @@
   color: #cbd5e1;
   font-size: 16px;
   padding: 20px;
+}
+
+/* Pagination footer panel */
+.pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 8px 0;
+  border-top: 1px solid #1e2a44;
+  /* Clean premium border */
+  margin-top: auto;
+}
+
+/* Page number indicator */
+.page-indicator {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+
+/* Sleek dark navigation buttons */
+.pagination-btn {
+  background: #1e293b;
+  color: #f8fafc;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Premium hover micro-animation */
+.pagination-btn:hover:not(:disabled) {
+  background: #2563eb;
+  border-color: #3b82f6;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+/* Active click push effect */
+.pagination-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Disabled styling */
+.pagination-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+/* Simple loading spinner in header */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Faded state while loading a new page */
+.emaillist.opacity-50 {
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.no-emails {
+  color: #64748b;
+  font-size: 14px;
+  text-align: center;
+  padding: 40px 0;
 }

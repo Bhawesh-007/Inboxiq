@@ -51,4 +51,3 @@ if __name__ == "__main__":
             "Warning: No Refresh Token was returned. "
             "Delete the app's access in your Google Account and try again."
         )
-
