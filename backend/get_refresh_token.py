@@ -5,32 +5,31 @@ from dotenv import load_dotenv
 from google_auth_oauthlib.flow import InstalledAppFlow
 load_dotenv()
 
-
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
+SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 def get_access_token():
+    
     client_config = {
-        "web": {
+        "web":{
             "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET,
+            "client_secret":CLIENT_SECRET,
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
             "token_uri": "https://oauth2.googleapis.com/token",
         }
     }
     flow = InstalledAppFlow.from_client_config(client_config, scopes=SCOPES)
-    print("Starting local server on port 8080. Opening browser for consent...")
+    print("Starting local server on port 8080.  Opening browser for consent...")
     creds = flow.run_local_server(
-        port=8080,
-        prompt='consent',
-        access_type='offline',
+        port = 8080,
+        prompt = 'consent',
+        access_type = 'offline',
     )
-    return creds.token, creds.refresh_token
-
-
-def update_env(access_token, refresh_token):
+    return creds.token , creds.refresh_token
+#now i will update the env file with new access and refresh tokens
+def update_env(access_token , refresh_token):
     with open(".env", "r") as f:
         lines = f.readlines()
     with open(".env", "w") as f:
@@ -41,8 +40,7 @@ def update_env(access_token, refresh_token):
                 f.write(f"GMAIL_REFRESH_TOKEN={refresh_token}\n")
             else:
                 f.write(line)
-    print("updated with new tokens")
-
+    print(f"updated with new tokens")
 if __name__ == "__main__":
     access_token, refresh_token = get_access_token()
 
