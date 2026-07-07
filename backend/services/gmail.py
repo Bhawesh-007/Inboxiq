@@ -11,7 +11,8 @@ from config import (
     GMAIL_ACCESS_TOKEN,
     GMAIL_REFRESH_TOKEN,
     CLIENT_ID,
-    CLIENT_SECRET
+    CLIENT_SECRET,
+    GCP_PUB_SUB_TOPIC
 )
 
 
@@ -186,3 +187,25 @@ def export_emails_to_file(user_id: str, file_path: str = "data.txt") -> None:
     with open(full_path, "w", encoding="utf-8") as f:
         json.dump(emails_to_store, f, ensure_ascii=False, indent=2)
     print(f"Exported {len(emails_to_store)} emails to {full_path}")
+def watch_inbox(user_id:str):
+    #it registers a watch on users inbox with gmail api 
+    #it also saves historyid and expiration date in the supabase table
+    service = get_gmail_service()
+    request_body = {
+          "topicName":GCP_PUB_SUB_TOPIC,
+    }
+    try:
+        response = service.users().watch(userId="me",body=request_body).execute()
+        history_id = response.get("historyId")
+        expiration_ms = int(response.get("expiration"))
+        expiration_dt = datetime.fromtimestamp(expiration_ms / 1000.0, tz=timezone.utc)
+        supabase.table("users").update({
+            "last_history_id":history_id,
+            "watch_expiration":expiration_dt.isoformat()
+        }).eq("id",user_id).execute()
+        print(f"watching inbox for user {user_id}")
+        return response
+    except Exception as e:
+        print(f"Error watching inbox: {e}")
+        return None
+    

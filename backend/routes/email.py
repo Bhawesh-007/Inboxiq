@@ -5,6 +5,10 @@ from pagination.paginator import EmailPaginator
 from services.gmail import get_gmail_service
 from database import supabase
 import base64
+from services.sync_history_emails import sync_history_emails
+import json 
+from pydantic import BaseModel
+from services.gmail import watch_inbox
 from config import (
     GMAIL_ACCESS_TOKEN,
     GMAIL_REFRESH_TOKEN,
@@ -13,7 +17,14 @@ from config import (
 )
 
 router = APIRouter()
-
+class PubSubMessageData(BaseModel): #this is for the inner json data structure from the message sent by pub sub model
+    data : str
+    messageId: str
+    publishTime: str
+class PubSubOuterJson(BaseModel):
+    message: PubSubMessageData
+    subscription:str  
+  
 def background_classify_emails(emails_to_classify: list):
     if not emails_to_classify:
         return
@@ -174,3 +185,25 @@ def get_email(email_id: str):
         "body": email_data["body"],
         "classification": classification # Passed directly to Next.js Emaildetail
     }
+@router.post("/emails/webhook")
+def gmail_webhook(payload:PubSubOuterJson , background_tasks:BackgroundTasks):
+    try:
+        decoded_data = base64.b64decode(payload.message.data).decode('utf-8')
+        data_json = json.loads(decoded_data)
+        email_address = data_json.get("emailAddress")
+        history_id = data_json.get("historyId")
+        print(f"[Webhook] Received notification for {email_address} with History ID: {history_id}")
+        #triggering the background sync task
+        background_tasks.add_task(sync_history_emails, email_address, int(history_id))
+        
+        return {
+            "status" : "accepted"
+        }
+    except Exception as e:
+        return {"error": str(e)}
+@router.post("/emails/watch")
+def start_watch(user_id:str):
+    response = watch_inbox(user_id)
+    if not response:
+        return {"error": "failed to start watch"}
+    return {"status" : "watch started" , "data":response}
