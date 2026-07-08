@@ -132,6 +132,7 @@ def get_emails(background_tasks: BackgroundTasks, page : int =1 , per_page: int 
         })
             
         return {"emails": frontend_emails,
+         "user_id": user_id,
          "pagination": {
                 "page": page,
                 "per_page": per_page,

@@ -112,11 +112,11 @@ These are not code changes — they are test procedure fixes. They should be doc
 `.agents/results/pub_sub_testing.md` (or equivalent):
 
 **Fix T-1: Correct `user_id` for watch endpoint**
-- Use the hard-coded UUID `6bf24bf5-8012-40c0-af85-91bfb4a0ac06` (`bhaweshcs@gmail.com`)
-- Never use `SELECT * LIMIT 1` — always filter by `email = 'bhaweshcs@gmail.com'`
+- Use the hard-coded UUID `6bf24bf5-8012-40c0-af85-91bfb4a0ac06` (`bhaweshjoshi689@gmail.com`)
+- Never use `SELECT * LIMIT 1` — always filter by `email = 'bhaweshjoshi689@gmail.com'`
 
 **Fix T-3: Realistic `historyId` in webhook payload**
-- Before each test, query `last_history_id` from Supabase for `bhaweshcs@gmail.com`
+- Before each test, query `last_history_id` from Supabase for `bhaweshjoshi689@gmail.com`
 - Use `historyId = actual_last_history_id + 1` in the base64 Pub/Sub payload
 - Increase wait time after webhook from **10 seconds → 30 seconds** before verification
 - Verify the **correct user row** (`bhaweshcs@gmail.com`) in the post-test Supabase query

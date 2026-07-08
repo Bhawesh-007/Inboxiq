@@ -1,3 +1,4 @@
+import asyncio
 from googleapiclient.errors import HttpError
 from services.parser import extract_headings_and_paragraphs
 from email.utils import parsedate_to_datetime
@@ -100,10 +101,28 @@ def sync_history_emails(email_address: str, current_history_id: int):
         if emails_to_store:
             supabase.table("emails").upsert(emails_to_store).execute()
             print(f"Synced {len(emails_to_store)} new emails from history update.")
-            
-            # Optional: Trigger your background classifier on these new emails
-            # from routes.email import background_classify_emails
-            # background_classify_emails(emails_to_store)
+
+            # Classify the newly synced emails
+            from routes.email import background_classify_emails
+            background_classify_emails(emails_to_store)
+
+            # 2. Broadcast to the connected browser client via WebSocket
+            from routes.websocket import manager
+            formatted_emails = [
+                {
+                    "id":      e["gmail_id"],
+                    "subject": e["subject"],
+                    "from":    e["sender"],
+                    "date":    e["date"],
+                    "label":   "unknown",   # classification runs async; frontend re-fetches on click
+                }
+                for e in emails_to_store
+            ]
+            try:
+                asyncio.run(manager.send(user_id, {"type": "new_emails", "emails": formatted_emails}))
+            except RuntimeError:
+                # Event loop already running — skip broadcast rather than crash
+                pass
     # 4. Save the current history ID as the new checkpoint
     supabase.table("users").update({"last_history_id": current_history_id}).eq("id", user_id).execute()
     print(f"[Sync] Checkpointed last_history_id={current_history_id} for user_id={user_id}")

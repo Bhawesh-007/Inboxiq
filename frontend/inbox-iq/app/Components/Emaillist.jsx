@@ -20,29 +20,36 @@ function Emaillist({ onEmailClick }) {
   const [hasMore, setHasMore] = useState(false);
   const per_page = 10;
   useEffect(() => {
-    fetch(`http://localhost:5003/emails?page=${page}&per_page=${per_page}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to fetch emails');
-        return res.json();
-      })
-      .then((data) => {
-        if (data.error) {
-          console.error('Backend error:', data.error);
-          setError(data.error);
+    const loadEmails = () => {
+      fetch(`http://localhost:5003/emails?page=${page}&per_page=${per_page}`)
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to fetch emails');
+          return res.json();
+        })
+        .then((data) => {
+          if (data.error) {
+            console.error('Backend error:', data.error);
+            setError(data.error);
+            setEmails([]);
+          } else {
+            setEmails(data.emails || []);
+            setHasMore(data.pagination?.has_more || false);
+            setError(null);
+          }
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error('Fetch error:', err);
+          setError(err.message);
           setEmails([]);
-        } else {
-          setEmails(data.emails || []);
-          setHasMore(data.pagination?.has_more || false);
-          setError(null);
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error('Fetch error:', err);
-        setError(err.message);
-        setEmails([]);
-        setLoading(false);
-      });
+          setLoading(false);
+        });
+    };
+
+    loadEmails(); // run immediately
+
+    const interval = setInterval(loadEmails, 30000); // re-fetch every 30s
+    return () => clearInterval(interval); // cleanup on unmount or page change
   }, [page]); //run every time when page changes
   const handleClick = (email) => {
     setSelectedId(email.id);

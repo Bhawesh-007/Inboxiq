@@ -20,7 +20,7 @@
       │  POST to GCP Pub/Sub topic  (GCP_PUB_SUB_TOPIC env var)
       ▼
 [GCP Pub/Sub — Push Subscription]
-      │  HTTP POST to ngrok/deployed URL
+      │  HTTP POST to deployed url of backend given as inboxiq-production-ec9c.up.railway.app
       ▼
 POST /emails/webhook  (routes/email.py)
       │  decodes base64 Pub/Sub payload → { emailAddress, historyId }
