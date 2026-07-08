@@ -53,11 +53,12 @@ def sync_history_emails(email_address: str, current_history_id: int):
         except HttpError as error:
             # If history ID is too old/expired (usually >7 days), Gmail returns 404/410/400
             if error.resp.status in [400, 404, 410]:
-                print("History ID expired or invalid. Falling back to full sync.")
+                print(f"[Sync] History ID expired/invalid. Falling back to full sync.")
                 # Trigger a standard full/recent sync instead of failing
                 sync_emails_to_supabase()
                 # Update history ID to current
                 supabase.table("users").update({"last_history_id": current_history_id}).eq("id", user_id).execute()
+                print(f"[Sync] Checkpointed last_history_id={current_history_id} for user_id={user_id} (fallback path)")
                 return
             else:
                 raise error
@@ -65,6 +66,7 @@ def sync_history_emails(email_address: str, current_history_id: int):
         # If no last history ID is stored, do a fresh sync
         sync_emails_to_supabase()
         supabase.table("users").update({"last_history_id": current_history_id}).eq("id", user_id).execute()
+        print(f"[Sync] Checkpointed last_history_id={current_history_id} for user_id={user_id} (fresh sync path)")
         return
     # 3. If there are new messages, fetch details and upsert to Supabase
     if new_message_ids:
@@ -104,4 +106,5 @@ def sync_history_emails(email_address: str, current_history_id: int):
             # background_classify_emails(emails_to_store)
     # 4. Save the current history ID as the new checkpoint
     supabase.table("users").update({"last_history_id": current_history_id}).eq("id", user_id).execute()
+    print(f"[Sync] Checkpointed last_history_id={current_history_id} for user_id={user_id}")
     

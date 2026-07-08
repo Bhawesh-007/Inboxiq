@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from services.gmail import fetch_emails, fetch_email_detail, sync_emails_to_supabase,get_gmail_service,get_or_create_user
 from services.parser import extract_body, extract_plain_text
 from pagination.paginator import EmailPaginator
@@ -205,5 +205,5 @@ def gmail_webhook(payload:PubSubOuterJson , background_tasks:BackgroundTasks):
 def start_watch(user_id:str):
     response = watch_inbox(user_id)
     if not response:
-        return {"error": "failed to start watch"}
+        raise HTTPException(status_code=500, detail="failed to start watch")
     return {"status" : "watch started" , "data":response}
