@@ -102,9 +102,15 @@ def sync_history_emails(email_address: str, current_history_id: int):
             supabase.table("emails").upsert(emails_to_store).execute()
             print(f"Synced {len(emails_to_store)} new emails from history update.")
 
-            # Classify the newly synced emails
-            from routes.email import background_classify_emails
-            background_classify_emails(emails_to_store)
+            # Step: fetch back the upserted rows to get their Supabase UUIDs
+            gmail_ids = [e["gmail_id"] for e in emails_to_store]
+            rows_res = supabase.table("emails").select("id, subject, body").in_("gmail_id", gmail_ids).execute()
+            rows_for_classification = rows_res.data
+            
+            # Classify the newly synced emails using the DB rows (which have the 'id' UUID)
+            if rows_for_classification:
+                from routes.email import background_classify_emails
+                background_classify_emails(rows_for_classification)
 
             # 2. Broadcast to the connected browser client via WebSocket
             from routes.websocket import manager

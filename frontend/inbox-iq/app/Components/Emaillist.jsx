@@ -1,27 +1,26 @@
-"use client"
+"use client";
 import React from 'react'
 import './Emailist.css'
 import { useEffect, useState } from 'react';
 import Tagbadge from './Tagbadge';
+import { useWebSocket } from '../hooks/useWebSocket';
 
-
-
-//see now i have configured the gmail inbox of mine now here i will connect 
-//to that api and would render emails here
-//now to show email body i will first choose the selected email id for that i will pass down it in a usestate
 function Emaillist({ onEmailClick }) {
   const [emails, setEmails] = useState([]);
-  //this is a hook which will store all the emails in the array
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
   const [error, setError] = useState(null);
-  //first i will set hooks to track page and nextpage token
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [userId, setUserId] = useState(null);
   const per_page = 10;
+
+  const { newEmails, clearNewEmails } = useWebSocket(userId);
+
   useEffect(() => {
     const loadEmails = () => {
-      fetch(`http://localhost:5003/emails?page=${page}&per_page=${per_page}`)
+      setLoading(true);
+      fetch(`https://inboxiq-production-ec9c.up.railway.app/emails?page=${page}&per_page=${per_page}`)
         .then((res) => {
           if (!res.ok) throw new Error('Failed to fetch emails');
           return res.json();
@@ -35,6 +34,10 @@ function Emaillist({ onEmailClick }) {
             setEmails(data.emails || []);
             setHasMore(data.pagination?.has_more || false);
             setError(null);
+            
+            if (data.user_id && !userId) {
+              setUserId(data.user_id);
+            }
           }
           setLoading(false);
         })
@@ -47,26 +50,37 @@ function Emaillist({ onEmailClick }) {
     };
 
     loadEmails(); // run immediately
+  }, [page]); 
 
-    const interval = setInterval(loadEmails, 30000); // re-fetch every 30s
-    return () => clearInterval(interval); // cleanup on unmount or page change
-  }, [page]); //run every time when page changes
   const handleClick = (email) => {
     setSelectedId(email.id);
-    onEmailClick(email.id)
+    onEmailClick(email.id);
+    clearNewEmails();
   }
-  if (loading) return <div className="loading">Loading emails ....</div>
+
+  const allEmails = [...newEmails, ...emails];
+
+  if (loading && page === 1) return <div className="loading">Loading emails ....</div>
   if (error) return <div className="error">Error: {error}</div>
+
   return (
     <div className="supclass flex flex-col gap-3">
       <div className="header text-white text-2xl font-bold">
         <div className="head">Inbox</div>
       </div>
 
+      {newEmails.length > 0 && (
+        <div className="new-email-banner" onClick={clearNewEmails}>
+          ↑ {newEmails.length} new email{newEmails.length > 1 ? "s" : ""} — click to dismiss
+        </div>
+      )}
+
       <div className="emaillist flex flex-col gap-1.5">
-        {emails.map((email) => (
+        {allEmails.map((email) => (
           <div key={email.id}
-            className={`email-box ${selectedId === email.id ? "selected" : ""}`}
+            className={`email-box ${selectedId === email.id ? "selected" : ""} ${
+              newEmails.some((e) => e.id === email.id) ? "email-box--new" : ""
+            }`}
             onClick={() => handleClick(email)}
           >
             <div className='email-header flex items-center gap-2'>
@@ -96,9 +110,6 @@ function Emaillist({ onEmailClick }) {
         </button>
       </div>
     </div>
-
   )
-
-
 }
 export default Emaillist;
