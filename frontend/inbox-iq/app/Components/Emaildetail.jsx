@@ -21,7 +21,7 @@ function Emaildetail({ emailId }) {
     //that i can use it for updating the database wwhenever i clik on a email
     useEffect(() => {
         if (!emailId) return;
-        fetch(`http://localhost:5003/emails/${emailId}`)
+        fetch(`https://inboxiq-production-ec9c.up.railway.app/emails/${emailId}`)
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch email details');
                 return res.json();
