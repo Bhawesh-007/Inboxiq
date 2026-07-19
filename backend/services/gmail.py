@@ -151,7 +151,7 @@ def sync_emails_to_supabase(page_token: str=None):
             "body": cleaned_body,
         })
     if(emails_to_store):
-       supabase.table("emails").upsert(emails_to_store).execute()
+       supabase.table("emails").upsert(emails_to_store, on_conflict="gmail_id").execute()
     else:
         print("No emails to store")
     return emails_to_store , next_page_token, user_id;

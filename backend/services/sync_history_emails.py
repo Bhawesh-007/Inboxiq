@@ -99,7 +99,7 @@ def sync_history_emails(email_address: str, current_history_id: int):
                 print(f"Error fetching detail for message {msg_id}: {e}")
         
         if emails_to_store:
-            supabase.table("emails").upsert(emails_to_store).execute()
+            supabase.table("emails").upsert(emails_to_store, on_conflict="gmail_id").execute()
             print(f"Synced {len(emails_to_store)} new emails from history update.")
 
             # Step: fetch back the upserted rows to get their Supabase UUIDs
